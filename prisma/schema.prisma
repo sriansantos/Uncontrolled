@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// Enums não são suportados no SQLite; kind/tier/source são strings
+// validadas na aplicação (ver src/lib/types.ts).
+
+model Category {
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
+  kind         String // "INCOME" | "EXPENSE"
+  tier         String? // "ESSENCIAL" | "NAO_ESSENCIAL" — apenas para EXPENSE
+  sortOrder    Int           @default(0)
+  active       Boolean       @default(true)
+  transactions Transaction[]
+  budgetItems  BudgetItem[]
+  recurrences  Recurrence[]
+
+  @@index([kind, tier, active])
+}
+
+model Transaction {
+  id           Int         @id @default(autoincrement())
+  date         String // "YYYY-MM-DD" (sem fuso, para evitar deslocamento de dia)
+  description  String
+  amountCents  Int // valor sempre positivo; kind define entrada/saída
+  kind         String // "INCOME" | "EXPENSE"
+  categoryId   Int
+  category     Category    @relation(fields: [categoryId], references: [id])
+  source       String      @default("MANUAL") // MANUAL | WHATSAPP | IMPORT
+  recurrenceId Int?
+  recurrence   Recurrence? @relation(fields: [recurrenceId], references: [id])
+  notes        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([date])
+  @@index([categoryId, date])
+  @@index([recurrenceId])
+}
+
+model BudgetItem {
+  id           Int      @id @default(autoincrement())
+  yearMonth    String // "YYYY-MM"
+  categoryId   Int
+  plannedCents Int      @default(0)
+  category     Category @relation(fields: [categoryId], references: [id])
+
+  @@unique([yearMonth, categoryId])
+}
+
+model Recurrence {
+  id           Int          @id @default(autoincrement())
+  name         String
+  amountCents  Int
+  dueDay       Int // dia do mês de vencimento (1–31)
+  categoryId   Int
+  category     Category     @relation(fields: [categoryId], references: [id])
+  active       Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  transactions Transaction[]
+}
