@@ -65,3 +65,26 @@ model Recurrence {
   createdAt    DateTime     @default(now())
   transactions Transaction[]
 }
+
+// Acesso ao app. O primeiro usuário é criado pela tela de login quando
+// ainda não existe nenhum ("primeiro acesso"); os demais, via npm run user:add.
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+}
+
+// Sessão de login: guardamos só o hash do token — vazamento do banco
+// não revela cookies utilizáveis.
+model Session {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

@@ -11,7 +11,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:demo": "tsx prisma/seed.ts --demo",
     "whatsapp": "tsx whatsapp-bot/bot.ts",
-    "db:sync": "tsx scripts/sync-to-turso.ts"
+    "db:sync": "tsx scripts/sync-to-turso.ts",
+    "db:migrate:remote": "tsx scripts/db-migrate.ts",
+    "user:add": "tsx scripts/user-add.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

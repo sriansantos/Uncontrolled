@@ -83,6 +83,27 @@ Indicadores calculados (espelham as fórmulas da planilha):
 - Reserva de emergência ideal = essenciais × 6
 - Renda comprometida (%) e taxa de poupança (%)
 
+## Segurança (login)
+
+O app exige autenticação para tudo — telas e API.
+
+- **Primeiro acesso**: ao abrir o app sem nenhum usuário cadastrado, a tela de
+  login mostra o formulário de criação do administrador (uma única vez).
+- **Login**: sessão opaca em cookie `httpOnly` (SameSite=Lax, 30 dias). No
+  banco guarda-se apenas o **hash do token** — vazamento do banco não expõe
+  sessões utilizáveis.
+- **Senhas**: hash **scrypt** (N=16384, r=8, nativo do Node, recomendação
+  OWASP), salt aleatório por usuário e comparação em tempo constante.
+- **Rate limiting**: login limitado a **5 tentativas / 10 min por IP**, com
+  bloqueio de 10 min ao exceder (e custo de hash mesmo para emails
+  inexistentes, para não enumerar contas). O endpoint do bot tem limite de
+  60 msg/min e exige o `WHATSAPP_TOKEN` do `.env` (header `x-bot-token`).
+- **Middleware global**: todas as páginas sem sessão vão para `/login`; toda
+  API sem sessão responde 401 — exceto `/api/auth/*` (login/status/registro
+  único) e `/api/whatsapp/*` (autenticado por token).
+- **Acessos adicionais**: `npm run user:add -- email@exemplo.com senhaForte123`
+  (mínimo 8 caracteres). Não há registro público depois do primeiro acesso.
+
 ## Deploy no Render
 
 O repositório tem o blueprint pronto (`render.yaml`) — o Render lê dele toda a
