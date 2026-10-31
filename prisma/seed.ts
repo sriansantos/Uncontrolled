@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { prisma } from "../src/lib/db";
 
 // Categorias no modelo da planilha "Primo Pobre 2026"

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { createClient, type Client, type InStatement } from "@libsql/client";
 import fs from "node:fs";
 import path from "node:path";
