@@ -10,9 +10,11 @@
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:demo": "tsx prisma/seed.ts --demo",
-    "whatsapp": "tsx whatsapp-bot/bot.ts"
+    "whatsapp": "tsx whatsapp-bot/bot.ts",
+    "db:sync": "tsx scripts/sync-to-turso.ts"
   },
   "dependencies": {
+    "@libsql/client": "^0.18.0",
     "@prisma/adapter-libsql": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "baileys": "^6.7.24",

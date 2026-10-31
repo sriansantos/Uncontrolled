@@ -28,6 +28,37 @@ npm run db:seed:demo
 > Os dados demo podem ser removidos em Lançamentos/Recorrências, ou apague o arquivo
 > `dev.db` e rode `npx prisma migrate dev && npm run db:seed` para recomeçar limpo.
 
+## Rodando com Turso (banco na nuvem)
+
+O app suporta dois modos pelo `.env`, sem mudar código: **local** (SQLite no disco,
+padrão) e **Turso** (SQLite na nuvem — sobrevive a restarts, deploys e formatação).
+
+**Migração para o Turso, passo a passo:**
+
+1. Crie uma conta em [app.turso.tech](https://app.turso.tech) (login com GitHub, sem cartão).
+2. Crie um banco: **Create database** → nome (ex.: `uncontrollader`), location **São Paulo**.
+3. No painel do banco, copie a **Database URL** (`libsql://…`) e gere um **token**
+   (**Generate token**) — são os dois valores que o app precisa.
+4. Edite o `.env` da raiz (use o `.env.example` de referência):
+   ```env
+   DATABASE_URL="libsql://uncontrollader-suaconta.turso.io"
+   DATABASE_AUTH_TOKEN="eyJ..."
+   ```
+5. Leve seus dados atuais (cria as tabelas e copia tudo do `dev.db`):
+   ```bash
+   npm run db:sync
+   ```
+   Começando do zero em vez de migrar? Rode `npm run db:seed` (semeia o banco remoto).
+6. `npm run dev` — o app agora lê e grava no Turso. O bot do WhatsApp e todas as telas
+   funcionam igual.
+
+**Notas:**
+- Para voltar ao modo local, só reverter o `.env` para `file:./dev.db` — o arquivo continua lá.
+- Plano Free do Turso (5 GB, 500 mi de leituras/mês) dá para décadas de uso pessoal.
+- Mudanças futuras de schema: migre local (`npx prisma migrate dev`) e rode
+  `npm run db:sync -- --force` para recopiar, ou aplique o SQL da migration no Turso.
+- O token é uma senha: nunca suba o `.env` (já está no `.gitignore`).
+
 ## Telas
 
 | Rota | O que faz |
