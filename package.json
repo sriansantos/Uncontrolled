@@ -9,11 +9,13 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
-    "db:seed:demo": "tsx prisma/seed.ts --demo"
+    "db:seed:demo": "tsx prisma/seed.ts --demo",
+    "whatsapp": "tsx whatsapp-bot/bot.ts"
   },
   "dependencies": {
     "@prisma/adapter-libsql": "^7.10.1",
     "@prisma/client": "^7.10.1",
+    "baileys": "^6.7.24",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.0",
     "date-fns": "^4.4.0",
@@ -21,6 +23,7 @@
     "next": "16.4.3",
     "next-themes": "^0.4.6",
     "prisma": "^7.10.1",
+    "qrcode-terminal": "^0.12.0",
     "radix-ui": "^1.8.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",

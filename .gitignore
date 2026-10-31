@@ -58,3 +58,6 @@ skills-lock.json
 
 # logs de dev do Next
 .next/dev/
+
+# sessão do bot do WhatsApp (credenciais — nunca subir)
+/whatsapp-bot/session/
