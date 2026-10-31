@@ -1,0 +1,25 @@
+# Blueprint do Render — a configuração do deploy vive aqui.
+# No painel: New + → Blueprint → escolha este repositório → preencha as
+# variáveis marcadas como "sync: false" (pede no momento do apply) → Apply.
+services:
+  - type: web
+    name: uncontrollader
+    runtime: node
+    plan: free          # bot 24h no ar? troque para starter + disco (veja README)
+    region: ohio        # região com menor latência para o Brasil
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: bash scripts/start-render.sh
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL        # libsql://seu-banco….turso.io
+        sync: false
+      - key: DATABASE_AUTH_TOKEN # token gerado no painel do Turso
+        sync: false
+      - key: START_BOT           # "1" só no plano pago com disco persistente
+        value: "0"
+      - key: BOT_SESSION_DIR
+        value: /var/data/whatsapp-session
+      - key: WHATSAPP_TOKEN      # protege /api/whatsapp/message (recomendado)
+        sync: false

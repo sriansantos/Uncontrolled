@@ -83,6 +83,42 @@ Indicadores calculados (espelham as fórmulas da planilha):
 - Reserva de emergência ideal = essenciais × 6
 - Renda comprometida (%) e taxa de poupança (%)
 
+## Deploy no Render
+
+O repositório tem o blueprint pronto (`render.yaml`) — o Render lê dele toda a
+configuração. O banco fica no Turso, então nenhum arquivo precisa persistir no
+servidor para o **app** funcionar.
+
+**Opção A — Plano free (R$ 0, app na internet; bot continua no seu PC):**
+
+1. Crie a conta em [render.com](https://render.com) com o GitHub.
+2. **New → Blueprint** → selecione o repositório `Uncontrolled`.
+3. Preencha quando pedido: `DATABASE_URL`, `DATABASE_AUTH_TOKEN` (os mesmos do
+   seu `.env` do Turso) e `WHATSAPP_TOKEN` (crie uma senha qualquer — protege a
+   API do bot).
+4. **Apply** → o build roda sozinho (`npm ci` + `prisma generate` + `next build`).
+5. A URL `https://uncontrollader-xxxx.onrender.com` fica no ar.
+
+No plano free o app **adormece após 15 min sem acesso** (a primeira visita
+seguinte demora ~50 s para acordar). Dados seguros — estão no Turso.
+
+**Bot híbrido (grátis):** no seu PC, aponte o bot para a nuvem:
+`APP_URL=https://uncontrollader-xxxx.onrender.com WHATSAPP_TOKEN=sua-senha npm run whatsapp`.
+Cada mensagem acorda o app se estiver dormindo (1ª lenta, resto voa).
+
+**Opção B — Plano starter (~US$ 7/mês, sempre ligado, com bot 24h):**
+
+1. Mesmos passos A, mas antes de **Apply** mude `plan: free` → `starter` no
+   `render.yaml` (ou no painel) e defina `START_BOT=1`.
+2. No painel do serviço: **Disks → Attach disk** → mount path `/var/data`
+   (1 GB) — é onde a sessão do WhatsApp persiste entre deploys.
+3. No primeiro boot, abra **Logs** ao vivo: o QR do WhatsApp aparece lá —
+   escaneie com o celular (Aparelhos conectados → Conectar). Só uma vez.
+4. `APP_URL` já é resolvido internamente (loopback) — nada a configurar.
+
+> Aviso honesto: o bot usa a interface não-oficial do WhatsApp (Baileys) em
+> qualquer cenário — local ou nuvem. Risco de bloqueio pequeno, mas existe.
+
 ## Integração com WhatsApp (bot local)
 
 Lance gastos e receitas mandando mensagem de texto — o bot conecta uma sessão

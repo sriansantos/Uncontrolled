@@ -19,7 +19,11 @@ const ALLOWED_JIDS = (process.env.ALLOWED_JIDS ?? "")
   .map((s) => s.trim())
   .filter(Boolean);
 
-const SESSION_DIR = path.resolve("whatsapp-bot/session");
+// Sessão configurável: no Render use um disco persistente (BOT_SESSION_DIR)
+// para não perder o pareamento a cada deploy.
+const SESSION_DIR = path.resolve(
+  process.env.BOT_SESSION_DIR ?? "whatsapp-bot/session"
+);
 const REPLY_MARKER = /^\s*(✅|❌|ℹ️|🗑️|📊|🤖|⚠️)/; // nossas próprias respostas (echo)
 
 async function ask(text: string, chat: string): Promise<string | null> {
