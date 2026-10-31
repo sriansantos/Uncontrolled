@@ -8,8 +8,10 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Toaster } from "@/components/ui/sonner";
 import { Wallet } from "lucide-react";
 
+// A variável "--font-sans" é a esperada pelo @theme do globals.css
+// (shadcn). Registrá-la aqui conecta o Geist a toda a interface.
 const geistSans = Geist({
-  variable: "--font-geist-sans",
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 

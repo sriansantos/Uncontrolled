@@ -21,7 +21,7 @@ export function MonthNav({
       <Button variant="outline" size="icon" onClick={() => onChange(shiftMonth(month, -1))} aria-label="Mês anterior">
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <span className="min-w-40 text-center text-sm font-semibold capitalize tabular-nums">
+      <span className="min-w-40 text-center text-sm font-semibold tabular-nums">
         {monthLabel(month)}
       </span>
       <Button variant="outline" size="icon" onClick={() => onChange(shiftMonth(month, 1))} aria-label="Próximo mês">
