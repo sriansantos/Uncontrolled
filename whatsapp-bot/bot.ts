@@ -36,12 +36,20 @@ async function ask(text: string, chat: string): Promise<string | null> {
       },
       body: JSON.stringify({ text, chat }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null);
+      const msg = (detail as { error?: string })?.error;
+      console.error(`✗ API ${res.status}: ${msg ?? "sem detalhe"} — o app está rodando?`);
+      // erro visível para quem mandou a mensagem (token errado/rate limit)
+      if (res.status === 401) return "⚠️ Token do bot inválido — confira WHATSAPP_TOKEN no .env e no painel do Render.";
+      if (res.status === 429) return `⚠️ ${msg ?? "Muitas mensagens; aguarde."}`;
+      return "⚠️ O servidor recusou a mensagem. Tente de novo em instantes.";
+    }
     const data = (await res.json()) as { reply?: string };
     return data.reply ?? null;
   } catch {
-    console.error("✗ API não respondeu — o app está rodando? (npm run dev)");
-    return null;
+    console.error("✗ API não respondeu — o app está rodando? (npm run dev /Render acordando)");
+    return "⚠️ Não consegui falar com o servidor agora. Tente de novo em instantes.";
   }
 }
 
@@ -97,9 +105,11 @@ async function start() {
       if (ALLOWED_JIDS.length > 0 && !ALLOWED_JIDS.includes(jid)) continue;
       if (!body) continue;
 
+      console.log(`→ ${isGroup ? "grupo" : "chat"}: "${body}"`);
       const reply = await ask(body, jid);
       if (reply) {
         await sock.sendMessage(jid, { text: reply }, { quoted: m });
+        console.log(`← respondido`);
       }
     }
   });
