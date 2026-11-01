@@ -37,6 +37,7 @@ curl -sSfL -H "Authorization: Bearer SEU_GITHUB_TOKEN" \
   -o gcp-startup.sh https://raw.githubusercontent.com/sriansantos/Uncontrolled/main/whatsapp-bot/gcp-startup.sh
 
 # 3) cria a VM — o script instala tudo sozinho no primeiro boot (~3 min)
+#    (o valor do --metadata inteiro entre ASPAS — token com "&" quebra o comando)
 gcloud compute instances create uncontrollader-bot \
   --zone=us-east1-b \
   --machine-type=e2-micro \
@@ -45,7 +46,7 @@ gcloud compute instances create uncontrollader-bot \
   --boot-disk-type=pd-standard \
   --boot-disk-size=30GB \
   --metadata-from-file startup-script=gcp-startup.sh \
-  --metadata=github_token=SEU_GITHUB_TOKEN,app_url=https://uncontrolled.onrender.com,whatsapp_token=SEU_TOKEN_DO_RENDER
+  --metadata="github_token=SEU_GITHUB_TOKEN,app_url=https://uncontrolled.onrender.com,whatsapp_token=SEU_TOKEN_DO_RENDER"
 ```
 
 `SEU_TOKEN_DO_RENDER` = o valor de `WHATSAPP_TOKEN` configurado no painel do
