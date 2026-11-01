@@ -8,16 +8,21 @@ export function isValidDate(d: string | null | undefined): d is string {
   return typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d);
 }
 
-export function currentYearMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
+// O servidor vive em UTC (Render/VM), mas o dinheiro é do Brasil:
+// datas de lançamento seguem sempre o fuso de Brasília.
+const TZ = "America/Sao_Paulo";
 
 export function todayISO(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
-    now.getDate()
-  ).padStart(2, "0")}`;
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date()); // en-CA → "YYYY-MM-DD"
+}
+
+export function currentYearMonth(): string {
+  return todayISO().slice(0, 7);
 }
 
 export function monthRange(ym: string): { start: string; end: string } {

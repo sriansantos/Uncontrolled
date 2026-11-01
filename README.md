@@ -110,6 +110,10 @@ O repositório tem o blueprint pronto (`render.yaml`) — o Render lê dele toda
 configuração. O banco fica no Turso, então nenhum arquivo precisa persistir no
 servidor para o **app** funcionar.
 
+> **Bot 24h sem deixar o PC ligado**: veja
+> [whatsapp-bot/GCP.md](whatsapp-bot/GCP.md) — guia para hospedar o bot
+> gratuitamente numa VM Google Cloud (Always Free) com auto-restart.
+
 **Opção A — Plano free (R$ 0, app na internet; bot continua no seu PC):**
 
 1. Crie a conta em [render.com](https://render.com) com o GitHub.
