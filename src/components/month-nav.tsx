@@ -16,6 +16,9 @@ export function MonthNav({
   const [current, setCurrent] = useState("");
   useEffect(() => setCurrent(currentYearMonth()), []);
   const isCurrent = month === current;
+  if (!month) {
+    return <div className="h-9 w-44" aria-hidden />; // placeholder até o mês resolver
+  }
   return (
     <div className="flex items-center gap-2">
       <Button variant="outline" size="icon" onClick={() => onChange(shiftMonth(month, -1))} aria-label="Mês anterior">
