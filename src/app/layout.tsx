@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { AppShell } from "@/components/app-shell";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 
-// A fonte registra --font-sans, a variável esperada pelo @theme do globals.css.
-const geistSans = Geist({
+// Identidade Neon Noite: Inter (texto) + Space Grotesk (títulos e valores).
+// As variáveis alimentam o @theme do globals.css (--font-sans/--font-heading).
+const inter = Inter({
   variable: "--font-sans",
+  subsets: ["latin"],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-heading",
   subsets: ["latin"],
 });
 
@@ -28,7 +34,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="pt-BR"
       suppressHydrationWarning
-      className={cn("h-full antialiased", geistSans.variable, geistMono.variable, "font-sans")}
+      className={cn(
+        "h-full antialiased",
+        inter.variable,
+        spaceGrotesk.variable,
+        geistMono.variable,
+        "font-sans"
+      )}
     >
       <body className="min-h-full bg-background text-foreground">
         <Providers>

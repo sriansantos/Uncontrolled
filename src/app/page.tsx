@@ -23,9 +23,10 @@ import {
   Percent, ReceiptText, CheckCircle2, Circle, RefreshCw,
 } from "lucide-react";
 
+// Paleta neon para o donut (categorias)
 const DONUT_COLORS = [
-  "#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#a855f7",
-  "#06b6d4", "#ec4899", "#84cc16", "#64748b",
+  "#a78bfa", "#22d3ee", "#34d399", "#fb7185", "#f0abfc",
+  "#818cf8", "#fbbf24", "#60a5fa", "#94a3b8",
 ];
 
 const fmtAxis = (v: number) => {
@@ -53,22 +54,24 @@ function MetricCell({
   label: string;
   value: string;
   hint?: string;
-  tone?: "default" | "positive" | "negative" | "warning";
+  tone?: "default" | "positive" | "negative" | "warning" | "info";
 }) {
   const valueCls =
     tone === "positive"
       ? "text-emerald-600 dark:text-emerald-400"
       : tone === "negative"
-        ? "text-red-600 dark:text-red-400"
+        ? "text-rose-600 dark:text-rose-400"
         : tone === "warning"
           ? "text-amber-600 dark:text-amber-400"
-          : "";
+          : tone === "info"
+            ? "text-cyan-600 dark:text-cyan-300"
+            : "";
   return (
     <div className="flex flex-1 flex-col gap-1 px-4 py-3.5">
       <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
         <Icon className="h-3.5 w-3.5" /> {label}
       </div>
-      <p className={`text-lg font-bold tabular-nums ${valueCls}`}>{value}</p>
+      <p className={`font-heading text-lg font-bold tabular-nums ${valueCls}`}>{value}</p>
       {hint && <p className="text-[11px] leading-tight text-muted-foreground">{hint}</p>}
     </div>
   );
@@ -181,7 +184,7 @@ export default function DashboardPage() {
                 label="Reserva ideal"
                 value={formatBRL(t.emergencyReserveCents)}
                 hint="6 × essenciais do mês"
-                tone="warning"
+                tone="info"
               />
               <MetricCell
                 icon={Gauge}
@@ -219,7 +222,7 @@ export default function DashboardPage() {
                     <YAxis tick={axisStyle} axisLine={false} tickLine={false} tickFormatter={fmtAxis} width={44} />
                     <Tooltip formatter={fmtTooltip} cursor={{ fill: "var(--accent)", opacity: 0.4 }} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="Orçado" fill="#94a3b8" radius={[4, 4, 0, 0]} maxBarSize={36} />
+                    <Bar dataKey="Orçado" fill="#4a4a73" radius={[4, 4, 0, 0]} maxBarSize={36} />
                     <Bar dataKey="Realizado" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={36} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -270,9 +273,9 @@ export default function DashboardPage() {
                   <YAxis tick={axisStyle} axisLine={false} tickLine={false} tickFormatter={fmtAxis} width={44} />
                   <Tooltip formatter={fmtTooltip} cursor={{ fill: "var(--accent)", opacity: 0.4 }} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="Entradas" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={28} />
-                  <Bar dataKey="Saídas" fill="var(--chart-2)" radius={[4, 4, 0, 0]} maxBarSize={28} />
-                  <Line type="monotone" dataKey="Saldo" stroke="var(--chart-4)" strokeWidth={2} dot={false} />
+                  <Bar dataKey="Entradas" fill="var(--chart-positive)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="Saídas" fill="var(--chart-negative)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                  <Line type="monotone" dataKey="Saldo" stroke="var(--chart-cyan)" strokeWidth={2} dot={false} />
                 </ComposedChart>
               </ResponsiveContainer>
             </CardContent>
@@ -345,7 +348,7 @@ export default function DashboardPage() {
                       className={
                         r.kind === "INCOME"
                           ? "shrink-0 text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400"
-                          : "shrink-0 text-sm font-semibold tabular-nums text-red-600 dark:text-red-400"
+                          : "shrink-0 text-sm font-semibold tabular-nums text-rose-600 dark:text-rose-400"
                       }
                     >
                       {r.kind === "INCOME" ? "+" : "−"} {formatBRL(r.amountCents)}

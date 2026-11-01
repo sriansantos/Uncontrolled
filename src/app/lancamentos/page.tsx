@@ -212,7 +212,7 @@ export default function LancamentosPage() {
                       className={`text-right font-semibold tabular-nums ${
                         t.kind === "INCOME"
                           ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-red-600 dark:text-red-400"
+                          : "text-rose-600 dark:text-rose-400"
                       }`}
                     >
                       {t.kind === "INCOME" ? "+" : "−"} {formatBRL(t.amountCents)}

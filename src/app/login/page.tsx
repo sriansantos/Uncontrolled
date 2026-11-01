@@ -60,7 +60,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm border-border/70 shadow-none">
         <CardContent className="p-6">
           <div className="mb-6 flex flex-col items-center gap-2 text-center">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-emerald-950">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-violet-400 to-violet-600 text-violet-950">
               <Wallet className="h-6 w-6" />
             </div>
             <h1 className="text-lg font-bold tracking-tight">Uncontrollader</h1>

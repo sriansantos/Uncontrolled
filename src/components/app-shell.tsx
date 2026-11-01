@@ -9,11 +9,11 @@ import { Wallet } from "lucide-react";
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-emerald-950 shadow-inner">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-400 to-violet-600 text-violet-950 shadow-inner">
         <Wallet className="h-5 w-5" />
       </div>
       <div className="leading-tight">
-        <p className="text-sm font-bold tracking-tight">Uncontrollader</p>
+        <p className="font-heading text-sm font-bold tracking-tight">Uncontrollader</p>
         {!compact && <p className="text-[11px] text-muted-foreground">finanças pessoais</p>}
       </div>
     </div>

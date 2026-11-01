@@ -12,16 +12,16 @@ const TONES: Record<string, { chip: string; value: string }> = {
     value: "text-emerald-600 dark:text-emerald-400",
   },
   negative: {
-    chip: "bg-red-500/15 text-red-600 dark:text-red-400",
-    value: "text-red-600 dark:text-red-400",
+    chip: "bg-rose-500/15 text-rose-600 dark:text-rose-400",
+    value: "text-rose-600 dark:text-rose-400",
   },
   warning: {
     chip: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
     value: "text-amber-600 dark:text-amber-400",
   },
   info: {
-    chip: "bg-sky-500/15 text-sky-600 dark:text-sky-400",
-    value: "text-sky-600 dark:text-sky-400",
+    chip: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-300",
+    value: "text-cyan-600 dark:text-cyan-300",
   },
 };
 
@@ -52,7 +52,9 @@ export function KpiCard({
             </span>
           )}
         </div>
-        <p className={cn("mt-1.5 text-xl font-bold tabular-nums sm:text-2xl", t.value)}>{value}</p>
+        <p className={cn("mt-1.5 font-heading text-xl font-bold tabular-nums sm:text-2xl", t.value)}>
+          {value}
+        </p>
         {hint && <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>}
       </CardContent>
     </Card>
