@@ -34,12 +34,18 @@ const ALLOWED_NUMBERS = (process.env.ALLOWED_NUMBERS ?? "")
 
 type WASock = ReturnType<typeof makeWASocket>;
 
-// Identidades do próprio bot (número e LID), em dígitos puros.
-function ownIdDigits(sock: WASock): Set<string> {
+// Identidades do próprio bot (número e LID), em dígitos puros — o WhatsApp
+// pode se referir à própria conta por qualquer um dos dois formatos.
+function ownIdCandidates(sock: WASock): Set<string> {
   const ids = new Set<string>();
   const u = sock.user as { id?: string; lid?: string } | undefined;
   if (u?.id) ids.add(u.id.split("@")[0].split(":")[0].replace(/\D/g, ""));
   if (u?.lid) ids.add(u.lid.split("@")[0].split(":")[0].replace(/\D/g, ""));
+  const me = (
+    sock.authState as unknown as { creds?: { me?: { id?: string; lid?: string } } }
+  )?.creds?.me;
+  if (me?.id) ids.add(me.id.split("@")[0].split(":")[0].replace(/\D/g, ""));
+  if (me?.lid) ids.add(me.lid.split("@")[0].split(":")[0].replace(/\D/g, ""));
   ids.delete("");
   return ids;
 }
@@ -133,16 +139,20 @@ async function start() {
       }
       if (ALLOWED_JIDS.length > 0 && !ALLOWED_JIDS.includes(jid)) continue;
 
-      // Chat direto: a conversa consigo mesmo é sempre permitida (o WhatsApp
-      // pode identificá-la pelo número OU pelo LID). Outros números só com
-      // ALLOWED_NUMBERS — os dígitos aparecem no log de "ignorado" para copiar.
+      // Chat direto: a conversa consigo mesmo é sempre permitida. O WhatsApp
+      // pode identificar o remetente pelo número OU pelo LID — comparamos
+      // todos os candidatos (jid, participantPn, identidades do próprio bot).
+      // Outros números só com ALLOWED_NUMBERS (dígitos copiáveis do log).
       if (!isGroup) {
-        const chatNumber = jid.split("@")[0].replace(/\D/g, "");
-        const own = ownIdDigits(sock);
-        const isSelfChat = own.has(chatNumber);
-        if (!isSelfChat && ALLOWED_NUMBERS.length > 0 && !ALLOWED_NUMBERS.includes(chatNumber)) {
+        const candidates = new Set<string>([jid.split("@")[0].replace(/\D/g, "")]);
+        const pn = (m.key as { participantPn?: string }).participantPn;
+        if (pn) candidates.add(pn.replace(/\D/g, ""));
+        const own = ownIdCandidates(sock);
+        const isSelfChat = [...candidates].some((c) => own.has(c));
+        const isAllowed = [...candidates].some((c) => ALLOWED_NUMBERS.includes(c));
+        if (!isSelfChat && ALLOWED_NUMBERS.length > 0 && !isAllowed) {
           console.log(
-            `↩ ignorado — número fora da lista: ${chatNumber}` +
+            `↩ ignorado — número fora da lista: ${jid.split("@")[0]}` +
               (own.size ? ` (o dono do bot é: ${[...own].join(", ")})` : "")
           );
           continue;
