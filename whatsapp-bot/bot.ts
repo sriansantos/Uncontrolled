@@ -57,31 +57,47 @@ const SESSION_DIR = path.resolve(
 );
 const REPLY_MARKER = /^\s*(✅|❌|ℹ️|🗑️|📊|🤖|⚠️)/; // nossas próprias respostas (echo)
 
+// Pergunta à API, com retry (5s/15s) para sobreviver a janelas de deploy
+// do Render e a falhas de rede passageiras.
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function ask(text: string, chat: string): Promise<string | null> {
-  try {
-    const res = await fetch(`${APP_URL}/api/whatsapp/message`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(TOKEN ? { "x-bot-token": TOKEN } : {}),
-      },
-      body: JSON.stringify({ text, chat }),
-    });
-    if (!res.ok) {
-      const detail = await res.json().catch(() => null);
-      const msg = (detail as { error?: string })?.error;
-      console.error(`✗ API ${res.status}: ${msg ?? "sem detalhe"} — o app está rodando?`);
-      // erro visível para quem mandou a mensagem (token errado/rate limit)
-      if (res.status === 401) return "⚠️ Token do bot inválido — confira WHATSAPP_TOKEN no .env e no painel do Render.";
-      if (res.status === 429) return `⚠️ ${msg ?? "Muitas mensagens; aguarde."}`;
-      return "⚠️ O servidor recusou a mensagem. Tente de novo em instantes.";
+  let lastStatus = 0;
+  let lastMsg = "";
+  const delays = [0, 5000, 15000];
+
+  for (let attempt = 0; attempt < delays.length; attempt++) {
+    if (delays[attempt]) await sleep(delays[attempt]);
+    try {
+      const res = await fetch(`${APP_URL}/api/whatsapp/message`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(TOKEN ? { "x-bot-token": TOKEN } : {}),
+        },
+        body: JSON.stringify({ text, chat }),
+      });
+      if (!res.ok) {
+        const detail = await res.json().catch(() => null);
+        lastMsg = (detail as { error?: string })?.error ?? "sem detalhe";
+        lastStatus = res.status;
+        console.error(`✗ API ${res.status}: ${lastMsg} (tentativa ${attempt + 1}/3)`);
+        continue;
+      }
+      const data = (await res.json()) as { reply?: string };
+      return data.reply ?? null;
+    } catch {
+      lastStatus = 0;
+      lastMsg = "sem conexão";
+      console.error(`✗ falha de rede (tentativa ${attempt + 1}/3) — o app está no ar?`);
     }
-    const data = (await res.json()) as { reply?: string };
-    return data.reply ?? null;
-  } catch {
-    console.error("✗ API não respondeu — o app está rodando? (npm run dev /Render acordando)");
-    return "⚠️ Não consegui falar com o servidor agora. Tente de novo em instantes.";
   }
+
+  if (lastStatus === 401) {
+    return "⚠️ Token do bot inválido — confira WHATSAPP_TOKEN no .env da VM e registre o bot com npm run bot:add.";
+  }
+  if (lastStatus === 429) return `⚠️ ${lastMsg}`;
+  return "⚠️ O servidor está instável agora (talvez um deploy em andamento) — tente de novo em instantes.";
 }
 
 async function start() {
