@@ -72,6 +72,7 @@ const HELP = [
   "🤖 *Uncontrollader* — como lançar:",
   "",
   "*Valor*: livre — 150 | 150,90 | 1.250,00 (o 1º número da mensagem é o valor)",
+  "  − na frente também força despesa: -100 para esposa",
   "",
   "*Despesa:* palavra da categoria + valor",
   "• mercado/supermercado/hortifruti → Supermercado",
@@ -151,7 +152,7 @@ async function createTransaction(
   let amountCents: number | null = null;
   let amountIndex = -1;
   for (let i = 0; i < tokens.length; i++) {
-    const c = parseBRLToCents(tokens[i].replace(/^\+/, ""));
+    const c = parseBRLToCents(tokens[i].replace(/^[+-]/, ""));
     if (c !== null && c > 0) {
       amountCents = c;
       amountIndex = i;

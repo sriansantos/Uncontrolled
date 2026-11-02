@@ -1,4 +1,5 @@
 import "dotenv/config";
+import fs from "node:fs";
 import makeWASocket, {
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
@@ -88,7 +89,11 @@ async function start() {
       const code = (lastDisconnect?.error as { output?: { statusCode?: number } })?.output
         ?.statusCode;
       if (code === DisconnectReason.loggedOut) {
-        console.log("✗ Sessão deslogada. Apague whatsapp-bot/session e rode de novo.");
+        // Desconectaram o bot pelo celular: a sessão morreu. Auto-recuperação:
+        // limpa a sessão e gera um QR novo — só escanear de novo.
+        console.log(`✗ Sessão deslogada — limpando ${SESSION_DIR} e gerando um novo QR em 3s…`);
+        await fs.promises.rm(SESSION_DIR, { recursive: true, force: true });
+        setTimeout(() => void start(), 3000);
         return;
       }
       console.log("↻ Conexão caiu; reconectando em 3s…");
