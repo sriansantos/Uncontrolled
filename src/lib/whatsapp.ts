@@ -102,8 +102,8 @@ const HELP = [
   "Em grupo: `!mercado 150`.",
 ].join("\n");
 
-async function loadCategories(): Promise<CategoryLite[]> {
-  const cats = await prisma.category.findMany({ where: { active: true } });
+async function loadCategories(userId: number): Promise<CategoryLite[]> {
+  const cats = await prisma.category.findMany({ where: { active: true, userId } });
   return cats.map((c) => ({ ...c, norm: normalize(c.name) }));
 }
 
@@ -139,8 +139,12 @@ function buildDescription(original: string, amountTokenIndex: number, category: 
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
 
-async function createTransaction(rawText: string, norm: string): Promise<WhatsAppResult> {
-  const categories = await loadCategories();
+async function createTransaction(
+  rawText: string,
+  norm: string,
+  userId: number
+): Promise<WhatsAppResult> {
+  const categories = await loadCategories(userId);
 
   // valor: primeiro token que é um número válido
   const tokens = norm.split(" ");
@@ -163,17 +167,19 @@ async function createTransaction(rawText: string, norm: string): Promise<WhatsAp
 
   const wantsIncome = norm.startsWith("+");
   const matched = findByKeyword(norm, categories);
-  let category: CategoryLite;
+  let category: CategoryLite | undefined;
   if (matched && (matched.kind === "INCOME" || !wantsIncome)) {
     category = matched;
   } else if (wantsIncome) {
     category =
       categories.find((c) => c.norm === normalize(FALLBACK_INCOME)) ??
-      categories.find((c) => c.kind === "INCOME")!;
+      categories.find((c) => c.kind === "INCOME");
+    if (!category) return { action: "error", reply: "⚠️ Nenhuma categoria de receita encontrada." };
   } else {
     category =
       categories.find((c) => c.norm === normalize(FALLBACK_EXPENSE)) ??
-      categories.find((c) => c.kind === "EXPENSE")!;
+      categories.find((c) => c.kind === "EXPENSE");
+    if (!category) return { action: "error", reply: "⚠️ Nenhuma categoria de despesa encontrada." };
   }
   const kind = category.kind;
 
@@ -189,6 +195,7 @@ async function createTransaction(rawText: string, norm: string): Promise<WhatsAp
       kind,
       categoryId: category.id,
       source: "WHATSAPP",
+      userId,
     },
   });
 
@@ -202,10 +209,10 @@ async function createTransaction(rawText: string, norm: string): Promise<WhatsAp
   };
 }
 
-async function payRecurrence(restNorm: string): Promise<WhatsAppResult> {
+async function payRecurrence(restNorm: string, userId: number): Promise<WhatsAppResult> {
   const wanted = restNorm.trim();
   const recs = await prisma.recurrence.findMany({
-    where: { active: true },
+    where: { active: true, userId },
     include: { category: true },
     orderBy: { dueDay: "asc" },
   });
@@ -223,7 +230,7 @@ async function payRecurrence(restNorm: string): Promise<WhatsAppResult> {
   const ym = currentYearMonth();
   const { start, end } = monthRange(ym);
   const already = await prisma.transaction.findFirst({
-    where: { recurrenceId: target.id, date: { gte: start, lte: end } },
+    where: { recurrenceId: target.id, userId, date: { gte: start, lte: end } },
   });
   if (already) {
     return { action: "already_paid", reply: `ℹ️ *${target.name}* já estava paga este mês.` };
@@ -240,6 +247,7 @@ async function payRecurrence(restNorm: string): Promise<WhatsAppResult> {
       categoryId: target.categoryId,
       source: "WHATSAPP",
       recurrenceId: target.id,
+      userId,
     },
   });
   return {
@@ -248,9 +256,9 @@ async function payRecurrence(restNorm: string): Promise<WhatsAppResult> {
   };
 }
 
-async function undoLast(): Promise<WhatsAppResult> {
+async function undoLast(userId: number): Promise<WhatsAppResult> {
   const last = await prisma.transaction.findFirst({
-    where: { source: "WHATSAPP" },
+    where: { source: "WHATSAPP", userId },
     orderBy: { createdAt: "desc" },
   });
   if (!last) {
@@ -264,9 +272,9 @@ async function undoLast(): Promise<WhatsAppResult> {
   };
 }
 
-async function summary(): Promise<WhatsAppResult> {
+async function summary(userId: number): Promise<WhatsAppResult> {
   const ym = currentYearMonth();
-  const d = await getDashboard(ym);
+  const d = await getDashboard(ym, userId);
   const pending = d.bills.filter((b) => !b.paid);
   const lines = [
     `📊 *${monthLabel(ym)}*`,
@@ -283,14 +291,14 @@ async function summary(): Promise<WhatsAppResult> {
   return { action: "summary", reply: lines.join("\n") };
 }
 
-export async function handleWhatsAppMessage(rawText: string): Promise<WhatsAppResult> {
+export async function handleWhatsAppMessage(rawText: string, userId: number): Promise<WhatsAppResult> {
   const text = String(rawText ?? "").trim().slice(0, 300);
   const norm = normalize(text);
   if (!norm) return { action: "ignored", reply: "" };
   if (/^(ajuda|help|\?)$/.test(norm)) return { action: "help", reply: HELP };
-  if (/^(saldo|resumo)$/.test(norm)) return summary();
-  if (/^desfazer$/.test(norm)) return undoLast();
+  if (/^(saldo|resumo)$/.test(norm)) return summary(userId);
+  if (/^desfazer$/.test(norm)) return undoLast(userId);
   const paid = norm.match(/^(?:paguei|pago)\s+(.+)$/);
-  if (paid) return payRecurrence(paid[1]);
-  return createTransaction(text, norm);
+  if (paid) return payRecurrence(paid[1], userId);
+  return createTransaction(text, norm, userId);
 }

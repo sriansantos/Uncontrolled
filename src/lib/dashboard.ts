@@ -76,26 +76,26 @@ function emptyRow(
   };
 }
 
-export async function getDashboard(month: string): Promise<DashboardData> {
+export async function getDashboard(month: string, userId: number): Promise<DashboardData> {
   const { start, end } = monthRange(month);
 
   const [transactions, budgetItems, recurrences, historyTx] = await Promise.all([
     prisma.transaction.findMany({
-      where: { date: { gte: start, lte: end } },
+      where: { date: { gte: start, lte: end }, userId },
       include: { category: true },
       orderBy: { date: "desc" },
     }),
     prisma.budgetItem.findMany({
-      where: { yearMonth: month },
+      where: { yearMonth: month, category: { userId } },
       include: { category: true },
     }),
     prisma.recurrence.findMany({
-      where: { active: true },
+      where: { active: true, userId },
       include: { category: true, transactions: { where: { date: { gte: start, lte: end } } } },
       orderBy: [{ dueDay: "asc" }, { name: "asc" }],
     }),
     prisma.transaction.findMany({
-      where: { date: { gte: `${shiftMonth(month, -5)}-01`, lte: end } },
+      where: { date: { gte: `${shiftMonth(month, -5)}-01`, lte: end }, userId },
       select: { date: true, kind: true, amountCents: true },
     }),
   ]);

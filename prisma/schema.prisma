@@ -9,71 +9,19 @@ datasource db {
 
 // Enums não são suportados no SQLite; kind/tier/source são strings
 // validadas na aplicação (ver src/lib/types.ts).
+// Multi-usuário: todo dado de financeiro pertence a um User.
 
-model Category {
+model User {
   id           Int           @id @default(autoincrement())
-  name         String        @unique
-  kind         String // "INCOME" | "EXPENSE"
-  tier         String? // "ESSENCIAL" | "NAO_ESSENCIAL" — apenas para EXPENSE
-  sortOrder    Int           @default(0)
-  active       Boolean       @default(true)
+  email        String        @unique
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  sessions     Session[]
+  bots         Bot[]
+  categories   Category[]
   transactions Transaction[]
   budgetItems  BudgetItem[]
   recurrences  Recurrence[]
-
-  @@index([kind, tier, active])
-}
-
-model Transaction {
-  id           Int         @id @default(autoincrement())
-  date         String // "YYYY-MM-DD" (sem fuso, para evitar deslocamento de dia)
-  description  String
-  amountCents  Int // valor sempre positivo; kind define entrada/saída
-  kind         String // "INCOME" | "EXPENSE"
-  categoryId   Int
-  category     Category    @relation(fields: [categoryId], references: [id])
-  source       String      @default("MANUAL") // MANUAL | WHATSAPP | IMPORT
-  recurrenceId Int?
-  recurrence   Recurrence? @relation(fields: [recurrenceId], references: [id])
-  notes        String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-
-  @@index([date])
-  @@index([categoryId, date])
-  @@index([recurrenceId])
-}
-
-model BudgetItem {
-  id           Int      @id @default(autoincrement())
-  yearMonth    String // "YYYY-MM"
-  categoryId   Int
-  plannedCents Int      @default(0)
-  category     Category @relation(fields: [categoryId], references: [id])
-
-  @@unique([yearMonth, categoryId])
-}
-
-model Recurrence {
-  id           Int          @id @default(autoincrement())
-  name         String
-  amountCents  Int
-  dueDay       Int // dia do mês de vencimento (1–31)
-  categoryId   Int
-  category     Category     @relation(fields: [categoryId], references: [id])
-  active       Boolean      @default(true)
-  createdAt    DateTime     @default(now())
-  transactions Transaction[]
-}
-
-// Acesso ao app. O primeiro usuário é criado pela tela de login quando
-// ainda não existe nenhum ("primeiro acesso"); os demais, via npm run user:add.
-model User {
-  id           Int       @id @default(autoincrement())
-  email        String    @unique
-  passwordHash String
-  createdAt    DateTime  @default(now())
-  sessions     Session[]
 }
 
 // Sessão de login: guardamos só o hash do token — vazamento do banco
@@ -86,5 +34,89 @@ model Session {
   expiresAt DateTime
   createdAt DateTime @default(now())
 
+  @@index([userId])
+}
+
+// Identidade de um bot do WhatsApp: o token que a VM apresenta é trocado
+// pelo hash e ligado ao dono — cada bot lança na conta do seu usuário.
+model Bot {
+  id        Int      @id @default(autoincrement())
+  name      String
+  tokenHash String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Category {
+  id           Int           @id @default(autoincrement())
+  name         String
+  kind         String // "INCOME" | "EXPENSE"
+  tier         String? // "ESSENCIAL" | "NAO_ESSENCIAL" — apenas para EXPENSE
+  sortOrder    Int           @default(0)
+  active       Boolean       @default(true)
+  userId       Int
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budgetItems  BudgetItem[]
+  recurrences  Recurrence[]
+
+  @@unique([userId, name])
+  @@index([kind, tier, active])
+  @@index([userId])
+}
+
+model Transaction {
+  id           Int         @id @default(autoincrement())
+  date         String // "YYYY-MM-DD" (sem fuso — datas em America/Sao_Paulo)
+  description  String
+  amountCents  Int // valor sempre positivo; kind define entrada/saída
+  kind         String // "INCOME" | "EXPENSE"
+  categoryId   Int
+  category     Category    @relation(fields: [categoryId], references: [id])
+  source       String      @default("MANUAL") // MANUAL | WHATSAPP | IMPORT
+  recurrenceId Int?
+  recurrence   Recurrence? @relation(fields: [recurrenceId], references: [id])
+  notes        String?
+  userId       Int
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([date])
+  @@index([categoryId, date])
+  @@index([recurrenceId])
+  @@index([userId])
+}
+
+model BudgetItem {
+  id           Int      @id @default(autoincrement())
+  yearMonth    String // "YYYY-MM"
+  categoryId   Int
+  plannedCents Int      @default(0)
+  category     Category @relation(fields: [categoryId], references: [id])
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([yearMonth, categoryId])
+  @@index([userId])
+}
+
+model Recurrence {
+  id           Int           @id @default(autoincrement())
+  name         String
+  amountCents  Int
+  dueDay       Int // dia do mês de vencimento (1–31)
+  categoryId   Int
+  category     Category      @relation(fields: [categoryId], references: [id])
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  userId       Int
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([categoryId])
   @@index([userId])
 }

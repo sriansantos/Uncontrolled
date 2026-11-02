@@ -21,5 +21,5 @@ services:
         value: "0"
       - key: BOT_SESSION_DIR
         value: /var/data/whatsapp-session
-      - key: WHATSAPP_TOKEN      # protege /api/whatsapp/message (recomendado)
-        sync: false
+      # O token do bot do WhatsApp não é mais variável do app: cada bot é
+      # registrado no banco com `npm run bot:add` (token → usuário).

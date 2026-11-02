@@ -5,6 +5,7 @@ import {
   timingSafeEqual,
 } from "node:crypto";
 import { promisify } from "node:util";
+import type { NextRequest } from "next/server";
 import { prisma } from "./db";
 
 // Autenticação do app: senhas com scrypt (OWASP), sessões opacas em cookie
@@ -63,6 +64,11 @@ export async function getAuthenticatedUser(
   });
   if (!session || session.expiresAt < new Date()) return null;
   return { id: session.user.id, email: session.user.email };
+}
+
+// Para rotas de API: resolve o usuário da sessão (cookie) da requisição.
+export async function getSessionUser(req: NextRequest): Promise<SessionUser | null> {
+  return getAuthenticatedUser(req.cookies.get(SESSION_COOKIE)?.value);
 }
 
 export async function createSession(userId: number): Promise<{ token: string; maxAge: number }> {

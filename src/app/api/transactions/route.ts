@@ -1,11 +1,17 @@
 import { prisma } from "@/lib/db";
 import { ok, handleRouteError, badRequest, readJson } from "@/lib/api-helpers";
 import { transactionCreateSchema } from "@/lib/validate";
+import { getSessionUser } from "@/lib/auth";
 import { isValidYearMonth, monthRange } from "@/lib/month";
+import type { NextRequest } from "next/server";
 
 // GET /api/transactions?month=YYYY-MM&kind=&categoryId=&q=&limit=&offset=
-export async function GET(req: Request) {
+// Sempre escopado ao usuário da sessão.
+export async function GET(req: NextRequest) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) return Response.json({ error: "Não autenticado." }, { status: 401 });
+
     const url = new URL(req.url);
     const month = url.searchParams.get("month");
     const kind = url.searchParams.get("kind");
@@ -14,7 +20,7 @@ export async function GET(req: Request) {
     const limit = Math.min(Math.max(Number(url.searchParams.get("limit")) || 100, 1), 500);
     const offset = Math.max(Number(url.searchParams.get("offset")) || 0, 0);
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { userId: user.id };
     if (month) {
       if (!isValidYearMonth(month)) return badRequest("month inválido (esperado YYYY-MM)");
       const { start, end } = monthRange(month);
@@ -51,12 +57,17 @@ export async function GET(req: Request) {
 }
 
 // POST /api/transactions
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) return Response.json({ error: "Não autenticado." }, { status: 401 });
+
     const body = await readJson(req);
     const data = transactionCreateSchema.parse(body);
 
-    const category = await prisma.category.findUnique({ where: { id: data.categoryId } });
+    const category = await prisma.category.findFirst({
+      where: { id: data.categoryId, userId: user.id },
+    });
     if (!category) return badRequest("Categoria não encontrada.");
     if (category.kind !== data.kind) {
       return badRequest(
@@ -64,7 +75,9 @@ export async function POST(req: Request) {
       );
     }
     if (data.recurrenceId) {
-      const rec = await prisma.recurrence.findUnique({ where: { id: data.recurrenceId } });
+      const rec = await prisma.recurrence.findFirst({
+        where: { id: data.recurrenceId, userId: user.id },
+      });
       if (!rec) return badRequest("Recorrência não encontrada.");
     }
 
@@ -78,6 +91,7 @@ export async function POST(req: Request) {
         source: data.source ?? "MANUAL",
         recurrenceId: data.recurrenceId ?? null,
         notes: data.notes ?? null,
+        userId: user.id,
       },
       include: { category: true },
     });

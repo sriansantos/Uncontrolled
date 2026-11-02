@@ -104,11 +104,22 @@ O app exige autenticação para tudo — telas e API.
 - **Acessos adicionais**: `npm run user:add -- email@exemplo.com senhaForte123`
   (mínimo 8 caracteres). Não há registro público depois do primeiro acesso.
 
-## Deploy no Render
+## Multi-usuário
 
-O repositório tem o blueprint pronto (`render.yaml`) — o Render lê dele toda a
-configuração. O banco fica no Turso, então nenhum arquivo precisa persistir no
-servidor para o **app** funcionar.
+A aplicação suporta várias contas com **dados totalmente isolados**:
+
+- Cada pessoa loga com o próprio email (mesma URL) e vê só o seu dinheiro
+- Categorias, lançamentos, orçamento e recorrências pertencem ao usuário
+- **Novo acesso**: `npm run user:add -- email@exemplo.com senhaForte123`
+  (cria o usuário + as 34 categorias padrão automaticamente)
+- **Bot por pessoa**: `npm run bot:add -- nome-do-bot email@exemplo.com`
+  gera um token — coloque no `WHATSAPP_TOKEN` do `.env` da VM do bot. Cada
+  token liga o número do WhatsApp ao dono dos lançamentos
+- **Segundo bot na mesma VM**: copie a pasta do bot, crie um `.env` próprio
+  (`WHATSAPP_TOKEN` do novo bot + `BOT_SESSION_DIR=/var/lib/uncontrollader-bot-2`)
+  e um segundo serviço systemd apontando para essa pasta
+
+## Deploy no Render
 
 > **Bot 24h sem deixar o PC ligado**: veja
 > [whatsapp-bot/GCP.md](whatsapp-bot/GCP.md) — guia para hospedar o bot

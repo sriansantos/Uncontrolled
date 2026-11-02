@@ -1,9 +1,12 @@
 import "dotenv/config";
 import { prisma } from "../src/lib/db";
 import { hashPassword } from "../src/lib/auth";
+import { seedCategoriesForUser } from "../src/lib/seed-categories";
 
-// Cria um usuário de acesso: npm run user:add -- email@exemplo.com senhaForte123
-// Útil para criar acessos adicionais sem passar pela tela de primeiro acesso.
+// Cria um usuário de acesso com as categorias padrão da planilha:
+//   npm run user:add -- email@exemplo.com senhaForte123
+// (mínimo 8 caracteres). O primeiro acesso pelo site também funciona —
+// mas só enquanto não existir nenhum usuário.
 
 async function main() {
   const [emailArg, passwordArg] = process.argv.slice(2);
@@ -28,7 +31,8 @@ async function main() {
   const user = await prisma.user.create({
     data: { email, passwordHash: await hashPassword(password) },
   });
-  console.log(`✅ Usuário criado: ${user.email} (id ${user.id})`);
+  const cats = await seedCategoriesForUser(user.id);
+  console.log(`✅ Usuário criado: ${user.email} (id ${user.id}) com ${cats} categorias padrão.`);
   await prisma.$disconnect();
 }
 

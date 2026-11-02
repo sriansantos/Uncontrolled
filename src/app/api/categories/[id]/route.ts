@@ -1,17 +1,24 @@
 import { prisma } from "@/lib/db";
 import { ok, handleRouteError, notFound, badRequest, conflict, readJson } from "@/lib/api-helpers";
 import { categoryUpdateSchema } from "@/lib/validate";
+import { getSessionUser } from "@/lib/auth";
+import type { NextRequest } from "next/server";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-// PATCH /api/categories/[id]
-export async function PATCH(req: Request, { params }: Ctx) {
+// PATCH /api/categories/[id] — do usuário da sessão
+export async function PATCH(req: NextRequest, { params }: Ctx) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) return Response.json({ error: "Não autenticado." }, { status: 401 });
+
     const { id } = await params;
     const catId = Number(id);
     if (!Number.isInteger(catId)) return badRequest("id inválido");
 
-    const existing = await prisma.category.findUnique({ where: { id: catId } });
+    const existing = await prisma.category.findFirst({
+      where: { id: catId, userId: user.id },
+    });
     if (!existing) return notFound("Categoria não encontrada.");
 
     const data = categoryUpdateSchema.parse(await readJson(req));
@@ -35,14 +42,17 @@ export async function PATCH(req: Request, { params }: Ctx) {
 }
 
 // DELETE /api/categories/[id] — bloqueado quando há histórico
-export async function DELETE(_req: Request, { params }: Ctx) {
+export async function DELETE(req: NextRequest, { params }: Ctx) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) return Response.json({ error: "Não autenticado." }, { status: 401 });
+
     const { id } = await params;
     const catId = Number(id);
     if (!Number.isInteger(catId)) return badRequest("id inválido");
 
-    const existing = await prisma.category.findUnique({
-      where: { id: catId },
+    const existing = await prisma.category.findFirst({
+      where: { id: catId, userId: user.id },
       include: {
         _count: { select: { transactions: true, budgetItems: true, recurrences: true } },
       },

@@ -13,7 +13,8 @@
     "whatsapp": "tsx whatsapp-bot/bot.ts",
     "db:sync": "tsx scripts/sync-to-turso.ts",
     "db:migrate:remote": "tsx scripts/db-migrate.ts",
-    "user:add": "tsx scripts/user-add.ts"
+    "user:add": "tsx scripts/user-add.ts",
+    "bot:add": "tsx scripts/bot-add.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

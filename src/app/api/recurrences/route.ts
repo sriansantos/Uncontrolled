@@ -1,17 +1,22 @@
 import { prisma } from "@/lib/db";
 import { ok, handleRouteError, badRequest, readJson } from "@/lib/api-helpers";
 import { recurrenceCreateSchema } from "@/lib/validate";
+import { getSessionUser } from "@/lib/auth";
 import { isValidYearMonth, monthRange, todayISO, currentYearMonth } from "@/lib/month";
+import type { NextRequest } from "next/server";
 
-// GET /api/recurrences?month=YYYY-MM — inclui status pago/pendente do mês
-export async function GET(req: Request) {
+// GET /api/recurrences?month=YYYY-MM — status pago/pendente do mês, do usuário
+export async function GET(req: NextRequest) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) return Response.json({ error: "Não autenticado." }, { status: 401 });
+
     const monthParam = new URL(req.url).searchParams.get("month") ?? currentYearMonth();
     if (!isValidYearMonth(monthParam)) return badRequest("month inválido (esperado YYYY-MM)");
     const { start, end } = monthRange(monthParam);
 
     const items = await prisma.recurrence.findMany({
-      where: { active: true },
+      where: { active: true, userId: user.id },
       include: {
         category: true,
         transactions: { where: { date: { gte: start, lte: end } } },
@@ -44,12 +49,17 @@ export async function GET(req: Request) {
   }
 }
 
-// POST /api/recurrences
-export async function POST(req: Request) {
+// POST /api/recurrences — cria para o usuário da sessão
+export async function POST(req: NextRequest) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) return Response.json({ error: "Não autenticado." }, { status: 401 });
+
     const data = recurrenceCreateSchema.parse(await readJson(req));
 
-    const category = await prisma.category.findUnique({ where: { id: data.categoryId } });
+    const category = await prisma.category.findFirst({
+      where: { id: data.categoryId, userId: user.id },
+    });
     if (!category) return badRequest("Categoria não encontrada.");
     if (category.kind !== "EXPENSE") {
       return badRequest("Recorrências devem usar uma categoria de saída.");
@@ -61,6 +71,7 @@ export async function POST(req: Request) {
         amountCents: data.amountCents,
         dueDay: data.dueDay,
         categoryId: data.categoryId,
+        userId: user.id,
       },
       include: { category: true },
     });

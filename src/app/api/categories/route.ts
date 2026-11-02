@@ -1,16 +1,22 @@
 import { prisma } from "@/lib/db";
 import { ok, handleRouteError, readJson } from "@/lib/api-helpers";
 import { categoryCreateSchema } from "@/lib/validate";
+import { getSessionUser } from "@/lib/auth";
+import type { NextRequest } from "next/server";
 
-// GET /api/categories?kind=&includeInactive=1
-export async function GET(req: Request) {
+// GET /api/categories?kind=&includeInactive=1 — do usuário da sessão
+export async function GET(req: NextRequest) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) return Response.json({ error: "Não autenticado." }, { status: 401 });
+
     const url = new URL(req.url);
     const kind = url.searchParams.get("kind");
     const includeInactive = url.searchParams.get("includeInactive") === "1";
 
     const items = await prisma.category.findMany({
       where: {
+        userId: user.id,
         ...(kind === "INCOME" || kind === "EXPENSE" ? { kind } : {}),
         ...(includeInactive ? {} : { active: true }),
       },
@@ -23,13 +29,16 @@ export async function GET(req: Request) {
   }
 }
 
-// POST /api/categories
-export async function POST(req: Request) {
+// POST /api/categories — cria para o usuário da sessão
+export async function POST(req: NextRequest) {
   try {
+    const user = await getSessionUser(req);
+    if (!user) return Response.json({ error: "Não autenticado." }, { status: 401 });
+
     const data = categoryCreateSchema.parse(await readJson(req));
     const tier = data.kind === "EXPENSE" ? (data.tier ?? null) : null;
     const last = await prisma.category.findFirst({
-      where: { kind: data.kind },
+      where: { kind: data.kind, userId: user.id },
       orderBy: { sortOrder: "desc" },
       select: { sortOrder: true },
     });
@@ -39,6 +48,7 @@ export async function POST(req: Request) {
         kind: data.kind,
         tier,
         sortOrder: (last?.sortOrder ?? 0) + 1,
+        userId: user.id,
       },
     });
     return ok(created, 201);

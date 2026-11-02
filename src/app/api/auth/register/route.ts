@@ -6,6 +6,7 @@ import {
   hashPassword,
   SESSION_COOKIE,
 } from "@/lib/auth";
+import { seedCategoriesForUser } from "@/lib/seed-categories";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import type { NextRequest } from "next/server";
 
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.create({
       data: { email, passwordHash: await hashPassword(password) },
     });
+    await seedCategoriesForUser(user.id);
 
     const { token, maxAge } = await createSession(user.id);
     const res = ok({ email: user.email }, 201);

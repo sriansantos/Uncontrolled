@@ -24,14 +24,6 @@ function targetConfig(): { url: string; authToken?: string } {
   };
 }
 
-async function tableExists(client: Client, table: string): Promise<boolean> {
-  const r = await client.execute({
-    sql: "SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name=?",
-    args: [table],
-  });
-  return Number(r.rows[0]?.n ?? 0) > 0;
-}
-
 async function main() {
   const cfg = targetConfig();
   const client = createClient(cfg);
@@ -57,15 +49,8 @@ async function main() {
     if (!fs.existsSync(file)) continue;
     const sql = fs.readFileSync(file, "utf8");
 
-    // Heurística de idempotência: se a primeira tabela da migration já
-    // existe no destino (ex.: criada por outra via), marca como aplicada.
-    const firstTable = sql.match(/CREATE TABLE\s+"?(\w+)"?/i)?.[1];
-    if (firstTable && (await tableExists(client, firstTable))) {
-      console.log(`  = ${name} (tabela ${firstTable} já existe — marcada)`);
-      await client.execute({ sql: "INSERT INTO _app_migrations (name, applied_at) VALUES (?, ?)", args: [name, new Date().toISOString()] });
-      continue;
-    }
-
+    // Observação: migrations que reconstroem tabelas (rebuild) aplicam por cima
+    // das existentes com backfill — marcador é a fonte de verdade.
     const statements = sql.split(/;\s*\n/).map((s) => s.trim()).filter(Boolean);
     await client.batch(statements.map((s) => ({ sql: s, args: [] }) satisfies InStatement), "write");
     await client.execute({ sql: "INSERT INTO _app_migrations (name, applied_at) VALUES (?, ?)", args: [name, new Date().toISOString()] });

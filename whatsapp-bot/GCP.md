@@ -46,11 +46,12 @@ gcloud compute instances create uncontrollader-bot \
   --boot-disk-type=pd-standard \
   --boot-disk-size=30GB \
   --metadata-from-file startup-script=gcp-startup.sh \
-  --metadata="github_token=SEU_GITHUB_TOKEN,app_url=https://uncontrolled.onrender.com,whatsapp_token=SEU_TOKEN_DO_RENDER"
+  --metadata="github_token=SEU_GITHUB_TOKEN,app_url=https://uncontrolled.onrender.com,whatsapp_token=TOKEN_DO_BOT"
 ```
 
-`SEU_TOKEN_DO_RENDER` = o valor de `WHATSAPP_TOKEN` configurado no painel do
-Render (Environment) — **tem que ser idêntico**.
+`TOKEN_DO_BOT` = o token registrado com `npm run bot:add -- nome email`
+(salve quando o comando imprimir). Cada bot tem o seu — e é ele que liga o
+número do WhatsApp ao usuário dono dos lançamentos.
 
 ## 4. Escanear o QR (uma vez só)
 
