@@ -13,10 +13,19 @@ import path from "node:path";
 
 const APP_URL = process.env.APP_URL ?? "http://localhost:3000";
 const TOKEN = process.env.WHATSAPP_TOKEN ?? "";
-// Opcional: ALLOWED_JIDS=numero@c.us,grupo@g.us npm run whatsapp
+// Opcional: ALLOWED_JIDS=numero@c.us,grupo@g.us restringe por JID completo
+// (inclui grupos). Grupos também exigem o prefixo "!".
 const ALLOWED_JIDS = (process.env.ALLOWED_JIDS ?? "")
   .split(",")
   .map((s) => s.trim())
+  .filter(Boolean);
+
+// Números (com DDI) que podem conversar com o bot em chat direto:
+//   ALLOWED_NUMBERS=5562920053791
+// Se ficar vazio, o bot escuta TODOS os chats diretos (comportamento antigo).
+const ALLOWED_NUMBERS = (process.env.ALLOWED_NUMBERS ?? "")
+  .split(",")
+  .map((s) => s.replace(/\D/g, ""))
   .filter(Boolean);
 
 // Sessão configurável: no Render use um disco persistente (BOT_SESSION_DIR)
@@ -103,6 +112,16 @@ async function start() {
         body = body.slice(1).trim();
       }
       if (ALLOWED_JIDS.length > 0 && !ALLOWED_JIDS.includes(jid)) continue;
+
+      // Chat direto: só números da lista ALLOWED_NUMBERS conversam com o bot.
+      if (!isGroup && ALLOWED_NUMBERS.length > 0) {
+        const chatNumber = jid.split("@")[0].replace(/\D/g, "");
+        if (!ALLOWED_NUMBERS.includes(chatNumber)) {
+          console.log(`↩ ignorado — número fora da lista: ${chatNumber}`);
+          continue;
+        }
+      }
+
       if (!body) continue;
 
       console.log(`→ ${isGroup ? "grupo" : "chat"}: "${body}"`);

@@ -84,6 +84,22 @@ gcloud compute ssh uncontrollader-bot --zone=us-east1-b \
   --command="sudo systemctl stop uncontrollader-bot"
 ```
 
+## 5.1 Quem pode conversar com o bot
+
+Por padrão o bot escuta **todos os chats diretos** do número conectado —
+inclusive conversas normais (com a família, por exemplo). Para permitir só os
+números que você escolher, adicione ao `.env` da VM:
+
+```bash
+gcloud compute ssh uncontrollader-bot --zone=us-east1-b \
+  --command="sudo sed -i '/^ALLOWED_NUMBERS=/d' /opt/uncontrollader/whatsapp-bot/.env && echo 'ALLOWED_NUMBERS=5562920053791' | sudo tee -a /opt/uncontrollader/whatsapp-bot/.env && sudo systemctl restart uncontrollader-bot && sleep 3 && journalctl -u uncontrollader-bot -n 5 --no-pager"
+```
+
+(Troque `5562920053791` pelo número completo **com DDI e DDD**, só dígitos —
+vários separados por vírgula. Conversas de fora da lista são **ignoradas em
+silêncio** e aparecem no log como `↩ ignorado`. Grupos continuam exigindo o
+prefixo `!` e podem ser restringidos com `ALLOWED_JIDS`.)
+
 ## 6. Como funciona lá dentro
 
 - O código fica em `/opt/uncontrollader` (clonado do GitHub no primeiro boot)

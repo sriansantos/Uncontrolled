@@ -183,7 +183,10 @@ npm run whatsapp    # escaneie o QR com: Aparelhos conectados → Conectar apare
 
 Sem palavra-chave reconhecida, a despesa cai em "Outras despesas". O bot
 responde confirmando cada lançamento. Variáveis opcionais: `APP_URL`,
-`WHATSAPP_TOKEN` (header `x-bot-token`), `ALLOWED_JIDS` (restringir chats).
+`WHATSAPP_TOKEN` (header `x-bot-token`), `ALLOWED_NUMBERS` (somente estes
+números conversam em chat direto — ex.: `ALLOWED_NUMBERS=5562920053791`,
+ignora o resto em silêncio) e `ALLOWED_JIDS` (restringe por JID, incluindo
+grupos).
 
 ## API REST
 
