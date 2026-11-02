@@ -76,7 +76,7 @@ async function start() {
 
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
+  sock.ev.on("connection.update", async ({ connection, lastDisconnect, qr }) => {
     if (qr) {
       console.log("\n📱 Escaneie este QR no WhatsApp: Aparelhos conectados → Conectar aparelho\n");
       qrcode.generate(qr, { small: true });
