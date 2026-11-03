@@ -44,7 +44,18 @@ async function main() {
     });
   });
 
-  const jid = (sock.user as { id?: string } | undefined)?.id?.split(":")[0] ?? "";
+  const jid = (
+    sock.user?.id ??
+    (sock.authState as { creds?: { me?: { id?: string } } } | undefined)?.creds?.me?.id ??
+    ""
+  )
+    .split(":")[0]
+    .trim();
+  if (!jid) {
+    console.error("✗ não consegui identificar o JID do próprio bot");
+    process.exit(1);
+  }
+  await new Promise((r) => setTimeout(r, 1500)); // Baileys preenche sock.user após o open
   await sock.sendMessage(jid, {
     text: "🔁 Sessão do bot renovada — mande seus comandos de novo 💜",
   });
