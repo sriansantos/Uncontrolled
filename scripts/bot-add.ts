@@ -33,18 +33,33 @@ async function main() {
   }
 
   const finalToken = token ?? randomBytes(24).toString("base64url");
-  const existing = await prisma.bot.findUnique({ where: { tokenHash: hashToken(finalToken) } });
-  if (existing) {
+  const tokenHash = hashToken(finalToken);
+
+  // Rotação: se já existe um bot com o mesmo nome, atualiza o token dele.
+  const existingByName = await prisma.bot.findFirst({ where: { name } });
+  if (existingByName) {
+    await prisma.bot.update({
+      where: { id: existingByName.id },
+      data: { tokenHash, userId: user.id },
+    });
+    console.log(`🔄 Bot "${name}" atualizado → ${email}`);
+    if (!token) console.log(`TOKEN NOVO (coloque no WHATSAPP_TOKEN da VM): ${finalToken}`);
+    await prisma.$disconnect();
+    return;
+  }
+
+  const existingByToken = await prisma.bot.findUnique({ where: { tokenHash } });
+  if (existingByToken) {
     console.error("✗ Esse token já está registrado em outro bot.");
     process.exit(1);
   }
 
   const bot = await prisma.bot.create({
-    data: { name, tokenHash: hashToken(finalToken), userId: user.id },
+    data: { name, tokenHash, userId: user.id },
   });
   console.log(`✅ Bot "${bot.name}" registrado → ${email}`);
   if (!token) {
-    console.log(`TOKEN (guarde — coloque no WHATSAPP_TOKEN da VM): ${finalToken}`);
+    console.log(`TOKEN NOVO (guarde — coloque no WHATSAPP_TOKEN da VM): ${finalToken}`);
   }
   await prisma.$disconnect();
 }
